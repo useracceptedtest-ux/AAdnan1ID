@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PHP Configuration & Security Documentation</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --panel: #ffffff;
+      --primary: #1f6feb;
+      --primary-2: #0f172a;
+      --accent: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(180deg, #eef4ff 0%, var(--bg) 100%);
+      color: var(--text);
+      line-height: 1.7;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    .header {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      padding: 28px 30px;
+      margin-bottom: 28px;
+    }
+
+    .title {
+      margin: 0 0 10px;
+      font-size: 2.1rem;
+      color: var(--primary-2);
+      letter-spacing: -0.03em;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 1rem;
+    }
+
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      background: #edf4ff;
+      color: var(--primary);
+      border: 1px solid #d9e9ff;
+      font-weight: 600;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 270px minmax(0, 1fr);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 20px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      padding: 18px 18px;
+    }
+
+    .nav h3 {
+      margin: 0 0 12px;
+      font-size: 0.95rem;
+      color: var(--primary-2);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .nav ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      gap: 8px;
+    }
+
+    .nav a {
+      color: var(--text);
+      text-decoration: none;
+      display: block;
+      padding: 9px 10px;
+      border-radius: 10px;
+      transition: 0.2s ease;
+      border: 1px solid transparent;
+      font-size: 0.96rem;
+    }
+
+    .nav a:hover {
+      background: #f3f7ff;
+      border-color: #dfeaff;
+      color: var(--primary);
+    }
+
+    .content {
+      display: grid;
+      gap: 22px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      padding: 26px 24px;
+    }
+
+    .card h2 {
+      margin: 0 0 12px;
+      font-size: 1.45rem;
+      color: var(--primary-2);
+      letter-spacing: -0.02em;
+    }
+
+    .card h3 {
+      margin: 26px 0 10px;
+      font-size: 1.06rem;
+      color: var(--primary-2);
+    }
+
+    p, li {
+      color: var(--text);
+      font-size: 0.98rem;
+    }
+
+    .info-box {
+      background: #f8fbff;
+      border-left: 4px solid var(--primary);
+      padding: 14px 16px;
+      border-radius: 10px;
+      color: var(--text);
+      margin: 16px 0;
+    }
+
+    .warning-box {
+      background: #fffaf0;
+      border-left: 4px solid var(--warning);
+      padding: 14px 16px;
+      border-radius: 10px;
+      color: var(--text);
+      margin: 16px 0;
+    }
+
+    .danger-box {
+      background: #fff5f5;
+      border-left: 4px solid var(--danger);
+      padding: 14px 16px;
+      border-radius: 10px;
+      color: var(--text);
+      margin: 16px 0;
+    }
+
+    .success-box {
+      background: #f0fff5;
+      border-left: 4px solid var(--accent);
+      padding: 14px 16px;
+      border-radius: 10px;
+      color: var(--text);
+      margin: 16px 0;
+    }
+
+    ul, ol {
+      margin-top: 10px;
+      margin-bottom: 10px;
+      padding-left: 22px;
+    }
+
+    code, pre {
+      font-family: Consolas, Monaco, monospace;
+    }
+
+    code {
+      background: #f3f6fb;
+      border: 1px solid #e5eaf3;
+      border-radius: 8px;
+      padding: 2px 7px;
+      font-size: 0.9em;
+      color: #0f172a;
+    }
+
+    pre {
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 16px 18px;
+      border-radius: 14px;
+      overflow-x: auto;
+      margin: 18px 0;
+      border: 1px solid #1e293b;
+    }
+
+    pre code {
+      background: transparent;
+      color: #e2e8f0;
+      border: 0;
+      padding: 0;
+      display: block;
+      white-space: pre-wrap;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    th, td {
+      border-bottom: 1px solid var(--border);
+      padding: 12px 14px;
+      text-align: left;
+      vertical-align: top;
+      font-size: 0.92rem;
+    }
+
+    th {
+      background: #f8fafc;
+      color: var(--primary-2);
+      font-weight: 700;
+    }
+
+    tr:last-child td { border-bottom: 0; }
+
+    .footer-note {
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin-top: 20px;
+    }
+
+    @media (max-width: 920px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1 class="title">Configuration & Security Documentation</h1>
+      <p class="subtitle">
+        Complete guide for developer teams using the centralized PHP security and configuration files created today.
+      </p>
+      <div class="badge-row">
+        <span class="badge">PHP</span>
+        <span class="badge">PostgreSQL</span>
+        <span class="badge">Security</span>
+        <span class="badge">Centralized Config</span>
+        <span class="badge">Windows + Nginx</span>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <nav class="nav">
+          <h3>Contents</h3>
+          <ul>
+            <li><a href="#overview">Overview</a></li>
+            <li><a href="#files-created">Files Created</a></li>
+            <li><a href="#why-centralized">Why Centralized</a></li>
+            <li><a href="#secret-management">Secret Management</a></li>
+            <li><a href="#database">Database Layer</a></li>
+            <li><a href="#read-write">Read / Write</a></li>
+            <li><a href="#tokens">Token System</a></li>
+            <li><a href="#encryption">Encryption</a></li>
+            <li><a href="#windows-nginx">Windows + Nginx</a></li>
+            <li><a href="#best-practice">Best Practice</a></li>
+            <li><a href="#example-flow">Example Flow</a></li>
+          </ul>
+        </nav>
+      </aside>
+
+      <main class="content">
+        <section id="overview" class="card">
+          <h2>1. Overview</h2>
+          <p>
+            This documentation describes the configuration and security structure created for a PHP application using a single central file approach.
+            The goal is to keep the application easier to maintain, simpler for future developers, and safer for production usage.
+          </p>
+          <div class="info-box">
+            The design is intentionally centralized. This means logic related to database connection, credential validation, token generation,
+            and encryption stays in one place instead of being spread across many files.
+          </div>
+          <p>
+            This is especially useful when you want to reduce the risk of hidden hardcoded credentials, ensure consistency across the codebase,
+            and make refactoring much easier.
+          </p>
+        </section>
+
+        <section id="files-created" class="card">
+          <h2>2. Files Created</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>File</th>
+                <th>Purpose</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>config.php</code></td>
+                <td>Original single-file app config used earlier</td>
+                <td>Existing file</td>
+              </tr>
+              <tr>
+                <td><code>configPostgreSQL.php</code></td>
+                <td>PostgreSQL-ready single-file core architecture</td>
+                <td>Created</td>
+              </tr>
+              <tr>
+                <td><code>configPostgreSQL.example.php</code></td>
+                <td>Human-readable example with setup and usage instructions</td>
+                <td>Created</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="warning-box">
+            <strong>Important:</strong> The original <code>config.php</code> was intentionally left unchanged as requested. The PostgreSQL version was created separately.
+          </div>
+        </section>
+
+        <section id="why-centralized" class="card">
+          <h2>3. Why This Centralized Pattern Is Better</h2>
+          <ul>
+            <li>One source of truth for configuration and logic.</li>
+            <li>Easy to refactor without tracking many scattered files.</li>
+            <li>Safer because secrets are not embedded into source code.</li>
+            <li>New developers can read one file and understand the core idea.</li>
+            <li>More consistent for security validation across database operations.</li>
+          </ul>
+
+          <div class="success-box">
+            This structure is especially useful when a team wants a clean and maintainable codebase without needing many small helper files.
+          </div>
+        </section>
+
+        <section id="secret-management" class="card">
+          <h2>4. Secret Management</h2>
+          <p>
+            The system expects secret keys to be stored on the server file system, not inside the project repository. This is important because source code repositories are often shared, backed up, or mirrored.
+          </p>
+
+          <p>Recommended folders:</p>
+          <ul>
+            <li>Linux: <code>/etc/myapp/keys</code></li>
+            <li>Windows: <code>C:\myapp\keys</code></li>
+            <li>Or a separately controlled directory outside the web root</li>
+          </ul>
+
+          <p>Typical files:</p>
+          <pre><code>login_secret.key
+operation_secret.key
+credential_write.key
+credential_read.key
+user_secret.key</code></pre>
+
+          <div class="danger-box">
+            Never place secret files inside the web public folder. Do not put them under <code>nginx/html</code>, <code>wwwroot</code>, or any published web directory.
+          </div>
+
+          <h3>Windows + Nginx Recommendation</h3>
+          <p>Use a secure folder such as:</p>
+          <pre><code>C:\secure\keys\login_secret.key
+C:\secure\keys\operation_secret.key
+C:\secure\keys\credential_write.key
+C:\secure\keys\credential_read.key
+C:\secure\keys\user_secret.key</code></pre>
+        </section>
+
+        <section id="database" class="card">
+          <h2>5. Database Layer</h2>
+          <p>
+            The PostgreSQL configuration file is designed to support database access in a clean and predictable way.
+            It centralizes database configuration, secure connection creation, and binding of parameter values.
+          </p>
+
+          <h3>Core responsibilities</h3>
+          <ul>
+            <li>Read environment variables safely.</li>
+            <li>Build a valid PDO DSN for PostgreSQL.</li>
+            <li>Use prepared statements for SQL safety.</li>
+            <li>Keep a single DB connection object cached in memory.</li>
+            <li>Use transaction boundaries for multi-step writes.</li>
+          </ul>
+
+          <h3>Environment values</h3>
+          <pre><code>DB_DRIVER=pgsql
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_NAME=app_db
+DB_USER=app_user
+DB_PASS=StrongPassword123
+DB_CHARSET=utf8mb4</code></pre>
+
+          <div class="info-box">
+            The connection class uses PDO and prepared statements to reduce SQL injection risk and improve maintainability.
+          </div>
+        </section>
+
+        <section id="read-write" class="card">
+          <h2>6. Read and Write Operations</h2>
+          <p>
+            The config class provides dedicated methods for data access. This makes the system clean and easy to understand for junior developers.
+          </p>
+
+          <h3>Read methods</h3>
+          <ul>
+            <li><code>fetchOne()</code> → one row</li>
+            <li><code>fetchAll()</code> → many rows</li>
+            <li><code>streamRows()</code> → large data streaming for memory-safe work</li>
+          </ul>
+
+          <h3>Write methods</h3>
+          <ul>
+            <li><code>insert()</code></li>
+            <li><code>update()</code></li>
+            <li><code>delete()</code></li>
+            <li><code>executeWrite()</code></li>
+            <li><code>bulkInsert()</code></li>
+          </ul>
+
+          <div class="warning-box">
+            For very large data imports, avoid loading all records into memory at once. Use <code>bulkInsert()</code> and <code>streamRows()</code> instead.
+          </div>
+        </section>
+
+        <section id="tokens" class="card">
+          <h2>7. Token System</h2>
+          <p>
+            The config system keeps two token types separate on purpose:
+          </p>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Token Type</th>
+                <th>Use</th>
+                <th>Important Rule</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>generateLoginToken()</code></td>
+                <td>User session / login</td>
+                <td>Used for user authentication, not DB modifications</td>
+              </tr>
+              <tr>
+                <td><code>generateOperationToken()</code></td>
+                <td>One-time write/delete action</td>
+                <td>Single-use only, different from login token</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="info-box">
+            This separation is critical for avoiding confusion between a user login session and a business operation such as update or delete.
+          </div>
+        </section>
+
+        <section id="encryption" class="card">
+          <h2>8. Encryption & Decryption</h2>
+          <p>
+            The system includes encryption utilities for both single values and bulk data payloads. All secret keys are expected to be stored outside the repo and outside the public web root.
+          </p>
+
+          <ul>
+            <li><code>encryptSingle()</code></li>
+            <li><code>decryptSingle()</code></li>
+            <li><code>encryptBulk()</code></li>
+            <li><code>decryptBulk()</code></li>
+          </ul>
+
+          <p>
+            This supports scenarios such as:
+          </p>
+          <ul>
+            <li>sensitive field encryption</li>
+            <li>secure API payload storage</li>
+            <li>masked or protected data transfers</li>
+            <li>bulk object encryption</li>
+          </ul>
+        </section>
+
+        <section id="windows-nginx" class="card">
+          <h2>9. Windows + Nginx Setup</h2>
+          <p>
+            For a Windows developer using Nginx and PHP, the setup is straightforward if you respect the environment boundaries.
+          </p>
+
+          <h3>Recommended folder structure</h3>
+          <pre><code>C:\nginx\html\yourapp\
+    configPostgreSQL.php
+    configPostgreSQL.example.php
+    index.php
+
+C:\secure\keys\
+    login_secret.key
+    operation_secret.key
+    credential_write.key
+    credential_read.key
+    user_secret.key</code></pre>
+
+          <h3>Important rules</h3>
+          <ul>
+            <li>Do not store keys under <code>C:\nginx\html</code>.</li>
+            <li>Keep secrets outside the publicly served folder.</li>
+            <li>Use environment variables or a bootstrap file to set values.</li>
+            <li>Enable PostgreSQL PDO support in <code>C:\php\php.ini</code>.</li>
+          </ul>
+
+          <pre><code>; PHP config
+extension=pdo_pgsql
+extension=pgsql</code></pre>
+
+          <div class="warning-box">
+            If PostgreSQL PDO support is not enabled, the config will fail when trying to connect to the database.
+          </div>
+        </section>
+
+        <section id="best-practice" class="card">
+          <h2>10. Best Practices</h2>
+          <ul>
+            <li>Use a dedicated database user with minimal privileges.</li>
+            <li>Do not grant superuser permissions to your app database user.</li>
+            <li>Never commit passwords or keys into Git.</li>
+            <li>Always use prepared statements.</li>
+            <li>Use transactions for multi-step writes.</li>
+            <li>Use secure, server-side secret files.</li>
+            <li>Prefer batch processing for very large data imports.</li>
+            <li>Review credential validation before every write operation.</li>
+          </ul>
+        </section>
+
+        <section id="example-flow" class="card">
+          <h2>11. Example Flow for a Simple Operation</h2>
+          <ol>
+            <li>Application reads env variables.</li>
+            <li>App opens DB connection.</li>
+            <li>Developer calls <code>fetchOne()</code> or <code>fetchAll()</code>.</li>
+            <li>For write operations, app verifies credential key.</li>
+            <li>App generates or validates operation token.</li>
+            <li>App executes write query with prepared statement.</li>
+            <li>App commits or rolls back transactions as needed.</li>
+            <li>App stores/retrieves encrypted payloads from server-side secret-protected files.</li>
+          </ol>
+
+          <pre><code>require_once __DIR__ . '/configPostgreSQL.php';
+
+$writeKey = AppConfigPostgreSQL::generateCredentialKey('write');
+
+$token = AppConfigPostgreSQL::generateOperationToken(
+    'create_user',
+    ['name' => 'Ali', 'email' => 'ali@example.com'],
+    $writeKey,
+    'write'
+);
+
+AppConfigPostgreSQL::insert(
+    'INSERT INTO users (name, email) VALUES (:name, :email)',
+    ['name' => 'Ali', 'email' => 'ali@example.com'],
+    $writeKey,
+    'write'
+);</code></pre>
+        </section>
+
+        <section class="card">
+          <h2>12. Final Recommendation</h2>
+          <p>
+            The best long-term approach for a team is to keep the configuration logic centralized, with strict secret handling and clear method boundaries.
+            This reduces risk, makes onboarding easier, and gives both junior and senior developers a shared understanding of how the application works.
+          </p>
+          <div class="success-box">
+            In short: one core file, secure server-side keys, environment-driven config, strong validation, and proper transaction patterns.
+          </div>
+          <p class="footer-note">
+            This documentation is meant to be easy for both junior and senior developers to read, maintain, and extend over time.
+          </p>
+        </section>
+      </main>
+    </div>
+  </div>
+</body>
+</html>
