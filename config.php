@@ -3,26 +3,27 @@
 declare(strict_types=1);
 
 /**
- * Single-file configuration and application core helper.
+ * AppConfig - Single-file security and infrastructure core for this application.
  *
- * Purpose:
- * - secure database connectivity
- * - safe read/write database access
- * - credential-based write validation
- * - login token generation
- * - one-time operation token generation
- * - single/bulk encryption and decryption
- *
- * Security note:
- * - Store secret files outside the public document root.
- * - Default key directory: /etc/myapp/keys
- * - If that directory is unavailable, fallback to __DIR__ . '/keys'
- * - Ensure files are chmod 600 and owned by the application user only.
+ * Essential developer note:
+ * - This file is intentionally centralized to prevent secret values and operational logic
+ *   from being scattered across multiple files.
+ * - The file must remain the single source of truth for database access, validation,
+ *   token lifecycle, and encryption helpers.
+ * - Never store production credentials, encryption keys, or operational tokens in the repo.
+ * - Secrets must live on the server filesystem outside the document root, with restrictive permissions.
+ * - Future refactors must preserve method contracts and keep all logic inside this class.
  */
 final class AppConfig
 {
     private static ?PDO $pdo = null;
 
+    /**
+     * Initialize the application security layout.
+     *
+     * This ensures the key directory exists before calling any secret-dependent method.
+     * In production, keys should be placed under /etc/myapp/keys with chmod 600.
+     */
     public static function init(): void
     {
         $keyDir = self::keyDirectory();
@@ -33,6 +34,12 @@ final class AppConfig
         }
     }
 
+    /**
+     * Secure database access layer.
+     *
+     * Use application-scoped database credentials only.
+     * Do not use root/admin credentials in application code.
+     */
     public static function dbConnect(): PDO
     {
         if (self::$pdo instanceof PDO) {
@@ -67,6 +74,12 @@ final class AppConfig
         return self::$pdo;
     }
 
+    /**
+     * Fetch a single row using a prepared statement.
+     *
+     * Use this for read operations that return at most one record.
+     * Example: user profile lookup, single configuration row, single record retrieval.
+     */
     public static function fetchOne(string $sql, array $params = []): ?array
     {
         $stmt = self::dbConnect()->prepare($sql);
@@ -78,6 +91,12 @@ final class AppConfig
         return is_array($row) ? $row : null;
     }
 
+    /**
+     * Fetch multiple rows using a prepared statement.
+     *
+     * This method automatically applies limit protection if the query does not contain LIMIT.
+     * Keep queries indexed and avoid SELECT * for large tables.
+     */
     public static function fetchAll(string $sql, array $params = [], int $limit = 1000): array
     {
         $query = trim($sql);
@@ -95,6 +114,12 @@ final class AppConfig
         return is_array($rows) ? $rows : [];
     }
 
+    /**
+     * Insert a record only after credential validation.
+     *
+     * credentialKey is a server-side validation token used to block unauthorized write operations.
+     * This must not be generated or trusted from the browser.
+     */
     public static function insert(string $sql, array $params, string $credentialKey, string $scope = 'write'): int
     {
         self::assertCredentialKey($credentialKey, $scope);
@@ -106,6 +131,9 @@ final class AppConfig
         return (int) self::dbConnect()->lastInsertId();
     }
 
+    /**
+     * Update records only when the caller presents a valid credential key for the scope.
+     */
     public static function update(string $sql, array $params, string $credentialKey, string $scope = 'write'): int
     {
         self::assertCredentialKey($credentialKey, $scope);
@@ -117,6 +145,9 @@ final class AppConfig
         return $stmt->rowCount();
     }
 
+    /**
+     * Delete records only after validation-of-authority is complete.
+     */
     public static function delete(string $sql, array $params, string $credentialKey, string $scope = 'write'): int
     {
         self::assertCredentialKey($credentialKey, $scope);
@@ -128,6 +159,11 @@ final class AppConfig
         return $stmt->rowCount();
     }
 
+    /**
+     * Generic write executor.
+     *
+     * Use this for statements that do not return row counts but must still honor the credential key.
+     */
     public static function executeWrite(string $sql, array $params, string $credentialKey, string $scope = 'write'): bool
     {
         self::assertCredentialKey($credentialKey, $scope);
@@ -139,6 +175,12 @@ final class AppConfig
         return true;
     }
 
+    /**
+     * Generate a login token for authenticated user sessions.
+     *
+     * This token is intended for user login/session usage and should be different from
+     * operational tokens used for data mutation commands.
+     */
     public static function generateLoginToken(array $user): string
     {
         if (empty($user['id'])) {
@@ -161,6 +203,14 @@ final class AppConfig
         return $header . '.' . $body . '.' . $signature;
     }
 
+    /**
+     * Generate a one-time operation token for write or delete commands.
+     *
+     * Important:
+     * - This token is distinct from login tokens.
+     * - It is meant to authorize a single business action only.
+     * - The token should be invalidated after use.
+     */
     public static function generateOperationToken(string $action, array $payload, string $credentialKey, string $scope = 'write'): string
     {
         self::assertCredentialKey($credentialKey, $scope);
@@ -185,6 +235,14 @@ final class AppConfig
         return $token;
     }
 
+    /**
+     * Validate a single-use operation token.
+     *
+     * A valid token must:
+     * - have a valid signature
+     * - not be expired
+     * - not be previously used
+     */
     public static function validateOperationToken(string $token, string $scope = 'write'): bool
     {
         if ($token === '' || !str_contains($token, '.')) {
@@ -228,6 +286,11 @@ final class AppConfig
         return true;
     }
 
+    /**
+     * Encrypt a single string value.
+     *
+     * The key is loaded from the server filesystem, not from the repository source code.
+     */
     public static function encryptSingle(string $plainText, string $keyName): string
     {
         $key = self::readSecret($keyName);
@@ -249,6 +312,9 @@ final class AppConfig
         return self::base64UrlEncode($iv . $tag . $cipher);
     }
 
+    /**
+     * Decrypt a single string value.
+     */
     public static function decryptSingle(string $cipherText, string $keyName): string
     {
         $key = self::readSecret($keyName);
@@ -281,6 +347,9 @@ final class AppConfig
         return $plain;
     }
 
+    /**
+     * Encrypt a bulk payload: array/object converted to JSON and then encrypted.
+     */
     public static function encryptBulk(array $payload, string $keyName): string
     {
         $json = json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
@@ -288,6 +357,9 @@ final class AppConfig
         return self::encryptSingle($json, $keyName);
     }
 
+    /**
+     * Decrypt a bulk payload back into an array.
+     */
     public static function decryptBulk(string $cipherText, string $keyName): array
     {
         $json = self::decryptSingle($cipherText, $keyName);
@@ -300,6 +372,12 @@ final class AppConfig
         return $decoded;
     }
 
+    /**
+     * Bind parameter values safely to a PDO statement.
+     *
+     * This keeps query generation consistent and prevents SQL injection by ensuring every value
+     * is passed as a bound placeholder instead of string concatenation.
+     */
     private static function bindParams(PDOStatement $stmt, array $params): void
     {
         foreach ($params as $key => $value) {
@@ -322,6 +400,11 @@ final class AppConfig
         }
     }
 
+    /**
+     * Validation gate for every write command.
+     *
+     * The credential key must be issued by the server and tied to a valid scope.
+     */
     private static function assertCredentialKey(string $credentialKey, string $scope): void
     {
         if (!self::verifyCredentialKey($credentialKey, $scope)) {
@@ -329,6 +412,9 @@ final class AppConfig
         }
     }
 
+    /**
+     * Verify if the supplied credential key matches the expected server-generated value.
+     */
     private static function verifyCredentialKey(string $key, string $scope): bool
     {
         if ($key === '') {
@@ -341,6 +427,11 @@ final class AppConfig
         return hash_equals($expected, $key);
     }
 
+    /**
+     * Resolve the secure key location.
+     *
+     * This is intentionally outside the public web root to avoid accidental exposure via HTTP.
+     */
     private static function keyDirectory(): string
     {
         $preferred = '/etc/myapp/keys';
@@ -356,11 +447,22 @@ final class AppConfig
         return $fallback;
     }
 
+    /**
+     * Build the full path to a secret file.
+     */
     private static function secretPath(string $name): string
     {
         return self::keyDirectory() . DIRECTORY_SEPARATOR . $name . '.key';
     }
 
+    /**
+     * Load a secret from the filesystem.
+     *
+     * Keep permissions strict:
+     * - file mode: 600
+     * - owner: application/user only
+     * - path: outside public web directory
+     */
     private static function readSecret(string $name): string
     {
         $path = self::secretPath($name);
@@ -377,6 +479,11 @@ final class AppConfig
         return $content;
     }
 
+    /**
+     * Safe environment variable retrieval.
+     *
+     * Values should be supplied via environment, not hardcoded into the repository.
+     */
     private static function env(string $name, mixed $default = null): mixed
     {
         $value = $_ENV[$name] ?? getenv($name);
@@ -388,11 +495,17 @@ final class AppConfig
         return $value;
     }
 
+    /**
+     * URL-safe base64 encoding.
+     */
     private static function base64UrlEncode(string $data): string
     {
         return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
     }
 
+    /**
+     * URL-safe base64 decoding.
+     */
     private static function base64UrlDecode(string $data): string
     {
         $padding = strlen($data) % 4;
@@ -403,6 +516,11 @@ final class AppConfig
         return base64_decode(strtr($data, '-_', '+/'), true);
     }
 
+    /**
+     * Token status management.
+     *
+     * A token should be one-time-only for operational actions.
+     */
     private static function markTokenUsed(string $token, bool $used): void
     {
         $dir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'app_cfg_tokens';
@@ -423,6 +541,9 @@ final class AppConfig
         }
     }
 
+    /**
+     * Check whether a token has already been consumed.
+     */
     private static function tokenExists(string $token): bool
     {
         $hash = hash('sha256', $token);
