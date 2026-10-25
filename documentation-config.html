@@ -284,9 +284,9 @@
       </p>
       <div class="badge-row">
         <span class="badge">PHP</span>
+        <span class="badge">MySQL</span>
         <span class="badge">PostgreSQL</span>
         <span class="badge">Security</span>
-        <span class="badge">Centralized Config</span>
         <span class="badge">Windows + Nginx</span>
       </div>
     </header>
@@ -298,6 +298,8 @@
           <ul>
             <li><a href="#overview">Overview</a></li>
             <li><a href="#files-created">Files Created</a></li>
+            <li><a href="#mysql-config">MySQL config.php</a></li>
+            <li><a href="#postgres-config">PostgreSQL config</a></li>
             <li><a href="#why-centralized">Why Centralized</a></li>
             <li><a href="#secret-management">Secret Management</a></li>
             <li><a href="#database">Database Layer</a></li>
@@ -315,17 +317,18 @@
         <section id="overview" class="card">
           <h2>1. Overview</h2>
           <p>
-            This documentation describes the configuration and security structure created for a PHP application using a single central file approach.
-            The goal is to keep the application easier to maintain, simpler for future developers, and safer for production usage.
+            This documentation explains the PHP configuration and security setup created for this project. It covers both versions created today:
+          </p>
+          <ul>
+            <li><code>config.php</code> for MySQL</li>
+            <li><code>configPostgreSQL.php</code> for PostgreSQL</li>
+          </ul>
+          <p>
+            The main idea is to keep the application configuration, database access, token rules, credential validation, and encryption logic in a single location to make the system easier to maintain and safer to protect.
           </p>
           <div class="info-box">
-            The design is intentionally centralized. This means logic related to database connection, credential validation, token generation,
-            and encryption stays in one place instead of being spread across many files.
+            A centralized design reduces hidden hardcoded values, makes onboarding easier, and makes refactoring more controlled for both junior and senior developers.
           </div>
-          <p>
-            This is especially useful when you want to reduce the risk of hidden hardcoded credentials, ensure consistency across the codebase,
-            and make refactoring much easier.
-          </p>
         </section>
 
         <section id="files-created" class="card">
@@ -341,53 +344,112 @@
             <tbody>
               <tr>
                 <td><code>config.php</code></td>
-                <td>Original single-file app config used earlier</td>
-                <td>Existing file</td>
+                <td>Original single-file app config for MySQL</td>
+                <td>Existing</td>
               </tr>
               <tr>
                 <td><code>configPostgreSQL.php</code></td>
-                <td>PostgreSQL-ready single-file core architecture</td>
+                <td>Single-file PostgreSQL-ready config</td>
                 <td>Created</td>
               </tr>
               <tr>
                 <td><code>configPostgreSQL.example.php</code></td>
-                <td>Human-readable example with setup and usage instructions</td>
+                <td>Practical guide and examples for PostgreSQL usage</td>
+                <td>Created</td>
+              </tr>
+              <tr>
+                <td><code>documentation-config.html</code></td>
+                <td>Documentation summary for all config files</td>
                 <td>Created</td>
               </tr>
             </tbody>
           </table>
 
           <div class="warning-box">
-            <strong>Important:</strong> The original <code>config.php</code> was intentionally left unchanged as requested. The PostgreSQL version was created separately.
+            <strong>Important:</strong> The original <code>config.php</code> remains unchanged, while the PostgreSQL version was created as a separate file to preserve compatibility and reduce risk.
+          </div>
+        </section>
+
+        <section id="mysql-config" class="card">
+          <h2>3. MySQL Configuration: config.php</h2>
+          <p>
+            The MySQL version is designed to be a single source of truth for the application. It manages database connection creation, secure read operations, write validation, token generation, and encryption helpers.
+          </p>
+
+          <h3>Main purpose</h3>
+          <ul>
+            <li>connect securely to MySQL</li>
+            <li>read one record or many records</li>
+            <li>support SQL operations with prepared statements</li>
+            <li>validate credential keys before writes</li>
+            <li>generate login token and operation token</li>
+            <li>encrypt and decrypt single or bulk data</li>
+          </ul>
+
+          <h3>MySQL environment example</h3>
+          <pre><code>DB_DRIVER=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_NAME=app_db
+DB_USER=app_user
+DB_PASS=StrongPassword123
+DB_CHARSET=utf8mb4</code></pre>
+
+          <div class="info-box">
+            The MySQL version uses MySQL-specific connection configuration and suitable PDO settings, including charset setup and MySQL connection initialization.
+          </div>
+        </section>
+
+        <section id="postgres-config" class="card">
+          <h2>4. PostgreSQL Configuration: configPostgreSQL.php</h2>
+          <p>
+            The PostgreSQL file follows the same centralized architecture but uses PostgreSQL-oriented DSN logic and database-safe patterns.
+          </p>
+
+          <h3>What is different from MySQL</h3>
+          <ul>
+            <li>PostgreSQL DSN syntax uses <code>pgsql:</code> instead of <code>mysql:</code></li>
+            <li>default PostgreSQL port is <code>5432</code></li>
+            <li>transaction and limit patterns are PostgreSQL-ready</li>
+            <li>streaming and bulk insert pattern is optimized for large data</li>
+          </ul>
+
+          <h3>PostgreSQL environment example</h3>
+          <pre><code>DB_DRIVER=pgsql
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_NAME=app_db
+DB_USER=app_user
+DB_PASS=StrongPassword123
+DB_CHARSET=utf8mb4</code></pre>
+
+          <div class="success-box">
+            This PostgreSQL version is designed to be simple for junior developers and powerful enough for large dataset processing.
           </div>
         </section>
 
         <section id="why-centralized" class="card">
-          <h2>3. Why This Centralized Pattern Is Better</h2>
+          <h2>5. Why This Centralized Pattern Is Better</h2>
           <ul>
             <li>One source of truth for configuration and logic.</li>
-            <li>Easy to refactor without tracking many scattered files.</li>
-            <li>Safer because secrets are not embedded into source code.</li>
-            <li>New developers can read one file and understand the core idea.</li>
-            <li>More consistent for security validation across database operations.</li>
+            <li>Easy to refactor without tracking multiple helper files.</li>
+            <li>Safer because secrets are not embedded in source code.</li>
+            <li>New developers can understand the app faster.</li>
+            <li>More consistent security checks before writes happen.</li>
           </ul>
-
-          <div class="success-box">
-            This structure is especially useful when a team wants a clean and maintainable codebase without needing many small helper files.
-          </div>
         </section>
 
         <section id="secret-management" class="card">
-          <h2>4. Secret Management</h2>
+          <h2>6. Secret Management</h2>
           <p>
-            The system expects secret keys to be stored on the server file system, not inside the project repository. This is important because source code repositories are often shared, backed up, or mirrored.
+            The system expects secret keys to be stored on the server filesystem, not inside the project repository. This reduces the chance of credentials being leaked, copied, or exposed through Git history.
           </p>
 
           <p>Recommended folders:</p>
           <ul>
             <li>Linux: <code>/etc/myapp/keys</code></li>
-            <li>Windows: <code>C:\myapp\keys</code></li>
-            <li>Or a separately controlled directory outside the web root</li>
+            <li>Windows: <code>C:\secure\keys</code></li>
+            <li>or another dedicated folder outside the web root</li>
           </ul>
 
           <p>Typical files:</p>
@@ -400,57 +462,35 @@ user_secret.key</code></pre>
           <div class="danger-box">
             Never place secret files inside the web public folder. Do not put them under <code>nginx/html</code>, <code>wwwroot</code>, or any published web directory.
           </div>
-
-          <h3>Windows + Nginx Recommendation</h3>
-          <p>Use a secure folder such as:</p>
-          <pre><code>C:\secure\keys\login_secret.key
-C:\secure\keys\operation_secret.key
-C:\secure\keys\credential_write.key
-C:\secure\keys\credential_read.key
-C:\secure\keys\user_secret.key</code></pre>
         </section>
 
         <section id="database" class="card">
-          <h2>5. Database Layer</h2>
+          <h2>7. Database Layer</h2>
           <p>
-            The PostgreSQL configuration file is designed to support database access in a clean and predictable way.
-            It centralizes database configuration, secure connection creation, and binding of parameter values.
+            The config class handles secure connection creation, binds parameters safely, and makes sure business logic does not concatenate raw SQL strings.
           </p>
 
           <h3>Core responsibilities</h3>
           <ul>
             <li>Read environment variables safely.</li>
-            <li>Build a valid PDO DSN for PostgreSQL.</li>
-            <li>Use prepared statements for SQL safety.</li>
-            <li>Keep a single DB connection object cached in memory.</li>
+            <li>Create a valid PDO DSN for the correct database driver.</li>
+            <li>Use prepared statements.</li>
+            <li>Cache the connection for reuse.</li>
             <li>Use transaction boundaries for multi-step writes.</li>
           </ul>
-
-          <h3>Environment values</h3>
-          <pre><code>DB_DRIVER=pgsql
-DB_HOST=127.0.0.1
-DB_PORT=5432
-DB_NAME=app_db
-DB_USER=app_user
-DB_PASS=StrongPassword123
-DB_CHARSET=utf8mb4</code></pre>
-
-          <div class="info-box">
-            The connection class uses PDO and prepared statements to reduce SQL injection risk and improve maintainability.
-          </div>
         </section>
 
         <section id="read-write" class="card">
-          <h2>6. Read and Write Operations</h2>
+          <h2>8. Read and Write Operations</h2>
           <p>
-            The config class provides dedicated methods for data access. This makes the system clean and easy to understand for junior developers.
+            The config class includes dedicated methods for read and write operations to clarify responsibilities and reduce accidental misuse.
           </p>
 
           <h3>Read methods</h3>
           <ul>
             <li><code>fetchOne()</code> → one row</li>
-            <li><code>fetchAll()</code> → many rows</li>
-            <li><code>streamRows()</code> → large data streaming for memory-safe work</li>
+            <li><code>fetchAll()</code> → multiple rows</li>
+            <li><code>streamRows()</code> → large dataset streaming</li>
           </ul>
 
           <h3>Write methods</h3>
@@ -462,48 +502,48 @@ DB_CHARSET=utf8mb4</code></pre>
             <li><code>bulkInsert()</code></li>
           </ul>
 
-          <div class="warning-box">
-            For very large data imports, avoid loading all records into memory at once. Use <code>bulkInsert()</code> and <code>streamRows()</code> instead.
+          <div class="info-box">
+            This pattern reduces the chance of developers writing raw SQL and directly exposing database operations without validations.
           </div>
         </section>
 
         <section id="tokens" class="card">
-          <h2>7. Token System</h2>
+          <h2>9. Token System</h2>
           <p>
-            The config system keeps two token types separate on purpose:
+            The design separates login token and operation token by purpose.
           </p>
 
           <table>
             <thead>
               <tr>
-                <th>Token Type</th>
-                <th>Use</th>
+                <th>Token</th>
+                <th>Purpose</th>
                 <th>Important Rule</th>
               </tr>
             </thead>
             <tbody>
               <tr>
                 <td><code>generateLoginToken()</code></td>
-                <td>User session / login</td>
-                <td>Used for user authentication, not DB modifications</td>
+                <td>Authentication / user session</td>
+                <td>Do not use for DB write action</td>
               </tr>
               <tr>
                 <td><code>generateOperationToken()</code></td>
-                <td>One-time write/delete action</td>
-                <td>Single-use only, different from login token</td>
+                <td>One-time write or delete action</td>
+                <td>Single-use only</td>
               </tr>
             </tbody>
           </table>
 
-          <div class="info-box">
-            This separation is critical for avoiding confusion between a user login session and a business operation such as update or delete.
+          <div class="warning-box">
+            Operation tokens should be validated and invalidated after use. This protects the application from repeated mutation attempts using the same command token.
           </div>
         </section>
 
         <section id="encryption" class="card">
-          <h2>8. Encryption & Decryption</h2>
+          <h2>10. Encryption & Decryption</h2>
           <p>
-            The system includes encryption utilities for both single values and bulk data payloads. All secret keys are expected to be stored outside the repo and outside the public web root.
+            The config file includes encryption support for single values and bulk payloads. Keys are stored outside the repository for protection.
           </p>
 
           <ul>
@@ -514,26 +554,20 @@ DB_CHARSET=utf8mb4</code></pre>
           </ul>
 
           <p>
-            This supports scenarios such as:
+            This is useful for sensitive operational data, user-specific protected content, and bulk payload transport.
           </p>
-          <ul>
-            <li>sensitive field encryption</li>
-            <li>secure API payload storage</li>
-            <li>masked or protected data transfers</li>
-            <li>bulk object encryption</li>
-          </ul>
         </section>
 
         <section id="windows-nginx" class="card">
-          <h2>9. Windows + Nginx Setup</h2>
+          <h2>11. Windows + Nginx Setup</h2>
           <p>
-            For a Windows developer using Nginx and PHP, the setup is straightforward if you respect the environment boundaries.
+            This is important because the application may be run on a Windows machine with Nginx and PHP installed separately.
           </p>
 
-          <h3>Recommended folder structure</h3>
+          <h3>Recommended layout</h3>
           <pre><code>C:\nginx\html\yourapp\
+    config.php
     configPostgreSQL.php
-    configPostgreSQL.example.php
     index.php
 
 C:\secure\keys\
@@ -543,80 +577,93 @@ C:\secure\keys\
     credential_read.key
     user_secret.key</code></pre>
 
-          <h3>Important rules</h3>
-          <ul>
-            <li>Do not store keys under <code>C:\nginx\html</code>.</li>
-            <li>Keep secrets outside the publicly served folder.</li>
-            <li>Use environment variables or a bootstrap file to set values.</li>
-            <li>Enable PostgreSQL PDO support in <code>C:\php\php.ini</code>.</li>
-          </ul>
-
-          <pre><code>; PHP config
+          <h3>Important configuration</h3>
+          <pre><code>; C:\php\php.ini
+extension=pdo_mysql
 extension=pdo_pgsql
 extension=pgsql</code></pre>
 
+          <p>
+            For MySQL, ensure the MySQL PDO extension is enabled. For PostgreSQL, ensure the PostgreSQL extension is enabled.
+          </p>
+
           <div class="warning-box">
-            If PostgreSQL PDO support is not enabled, the config will fail when trying to connect to the database.
+            Do not store your secret files under <code>C:\nginx\html</code> or any publicly served folder. The secure key folder must stay outside the web root.
           </div>
         </section>
 
         <section id="best-practice" class="card">
-          <h2>10. Best Practices</h2>
+          <h2>12. Best Practices</h2>
           <ul>
-            <li>Use a dedicated database user with minimal privileges.</li>
-            <li>Do not grant superuser permissions to your app database user.</li>
-            <li>Never commit passwords or keys into Git.</li>
+            <li>Use a dedicated app database user with minimal privileges.</li>
+            <li>Never put app secrets in Git.</li>
             <li>Always use prepared statements.</li>
             <li>Use transactions for multi-step writes.</li>
-            <li>Use secure, server-side secret files.</li>
-            <li>Prefer batch processing for very large data imports.</li>
-            <li>Review credential validation before every write operation.</li>
+            <li>Keep one method per responsibility.</li>
+            <li>Use key files protected outside the public folder.</li>
+            <li>Use batch insert or streaming for large datasets.</li>
+            <li>Validate credential keys before all write operations.</li>
           </ul>
         </section>
 
         <section id="example-flow" class="card">
-          <h2>11. Example Flow for a Simple Operation</h2>
+          <h2>13. Example Flow</h2>
           <ol>
-            <li>Application reads env variables.</li>
-            <li>App opens DB connection.</li>
-            <li>Developer calls <code>fetchOne()</code> or <code>fetchAll()</code>.</li>
-            <li>For write operations, app verifies credential key.</li>
-            <li>App generates or validates operation token.</li>
-            <li>App executes write query with prepared statement.</li>
-            <li>App commits or rolls back transactions as needed.</li>
-            <li>App stores/retrieves encrypted payloads from server-side secret-protected files.</li>
+            <li>Read environment variables.</li>
+            <li>Create database connection.</li>
+            <li>Call <code>fetchOne()</code> or <code>fetchAll()</code> for read actions.</li>
+            <li>Check credential key before write action.</li>
+            <li>Generate or validate operation token.</li>
+            <li>Run the SQL query with prepared parameters.</li>
+            <li>Commit or rollback transaction if needed.</li>
+            <li>Store encrypted payloads when necessary.</li>
           </ol>
 
-          <pre><code>require_once __DIR__ . '/configPostgreSQL.php';
+          <pre><code>require_once __DIR__ . '/config.php';
 
-$writeKey = AppConfigPostgreSQL::generateCredentialKey('write');
+$writeKey = AppConfig::generateCredentialKey('write');
 
-$token = AppConfigPostgreSQL::generateOperationToken(
+$token = AppConfig::generateOperationToken(
     'create_user',
     ['name' => 'Ali', 'email' => 'ali@example.com'],
     $writeKey,
     'write'
 );
 
-AppConfigPostgreSQL::insert(
+AppConfig::insert(
     'INSERT INTO users (name, email) VALUES (:name, :email)',
     ['name' => 'Ali', 'email' => 'ali@example.com'],
     $writeKey,
     'write'
 );</code></pre>
+
+          <pre><code>require_once __DIR__ . '/configPostgreSQL.php';
+
+$writeKey = AppConfigPostgreSQL::generateCredentialKey('write');
+
+AppConfigPostgreSQL::bulkInsert(
+    'users',
+    [
+        ['name' => 'A', 'email' => 'a@example.com'],
+        ['name' => 'B', 'email' => 'b@example.com'],
+    ],
+    ['name', 'email'],
+    $writeKey,
+    'write',
+    500
+);</code></pre>
         </section>
 
         <section class="card">
-          <h2>12. Final Recommendation</h2>
+          <h2>14. Final Recommendation</h2>
           <p>
-            The best long-term approach for a team is to keep the configuration logic centralized, with strict secret handling and clear method boundaries.
-            This reduces risk, makes onboarding easier, and gives both junior and senior developers a shared understanding of how the application works.
+            The best long-term structure is one central config file, secure secret storage outside the public web directory, environment-driven values, and strict validation before every write operation.
           </p>
           <div class="success-box">
-            In short: one core file, secure server-side keys, environment-driven config, strong validation, and proper transaction patterns.
+            In short: keep the logic centralized, keep the secrets out of the repo, and keep developer onboarding simple with clear method names and comments.
           </div>
           <p class="footer-note">
-            This documentation is meant to be easy for both junior and senior developers to read, maintain, and extend over time.
+            This documentation is intended to be understood by both junior and senior developers and to support safe future refactoring.
           </p>
         </section>
       </main>
