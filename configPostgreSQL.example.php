@@ -9,7 +9,8 @@ declare(strict_types=1);
  * 1. Pastikan file configPostgreSQL.php sudah ada di folder yang sama.
  * 2. Buat secret key pada server filesystem di luar document root.
  *    Contoh aman:
- *      /etc/myapp/keys/
+ *      /etc/myapp/keys/       (Linux)
+ *      C:/myapp/keys/         (Windows)
  *
  *    File yang biasa dipakai:
  *      - login_secret.key
@@ -18,7 +19,7 @@ declare(strict_types=1);
  *      - credential_read.key
  *      - user_secret.key
  *
- * 3. Set permission file dengan chmod 600 agar hanya aplikasi yang bisa membacanya.
+ * 3. Set permission file dengan chmod 600 (Linux) atau gunakan ACL / file permission terbatas pada Windows.
  * 4. Atur environment variable berikut di server atau .env:
  *      DB_DRIVER=pgsql
  *      DB_HOST=127.0.0.1
@@ -36,6 +37,70 @@ declare(strict_types=1);
  * - Jangan menaruh password di kode PHP.
  * - Gunakan credential key yang di-generate dari server untuk operasi write.
  * - Login token dan operasional token harus dipisah.
+ *
+ * ---------------------------------------------------------------------------
+ * WINDOWS VERSION GUIDE
+ * ---------------------------------------------------------------------------
+ * Jika programmer bekerja di Windows, biasanya langkahnya seperti ini:
+ *
+ * 1) Buat folder secret manual di folder server atau folder project yang tidak dipublish:
+ *      C:\myapp\keys
+ *
+ * 2) Simpan file berikut di folder tersebut:
+ *      login_secret.key
+ *      operation_secret.key
+ *      credential_write.key
+ *      credential_read.key
+ *      user_secret.key
+ *
+ * 3) Isi file-file tersebut dengan string acak yang panjang dan aman.
+ *    Contoh isi file:
+ *      login_secret.key       => "4f5e9d72fd3a...randomvalue..."
+ *      operation_secret.key   => "76ac1299ee91...randomvalue..."
+ *
+ * 4) Set environment variable di Windows PowerShell:
+ *      $env:DB_DRIVER = "pgsql"
+ *      $env:DB_HOST = "127.0.0.1"
+ *      $env:DB_PORT = "5432"
+ *      $env:DB_NAME = "app_db"
+ *      $env:DB_USER = "app_user"
+ *      $env:DB_PASS = "StrongPassword123"
+ *      $env:DB_CHARSET = "utf8mb4"
+ *
+ *   Atau via Command Prompt:
+ *      set DB_DRIVER=pgsql
+ *      set DB_HOST=127.0.0.1
+ *      set DB_PORT=5432
+ *      set DB_NAME=app_db
+ *      set DB_USER=app_user
+ *      set DB_PASS=StrongPassword123
+ *      set DB_CHARSET=utf8mb4
+ *
+ * 5) Jika proyek Anda memakai .env, buat file .env seperti ini:
+ *      DB_DRIVER=pgsql
+ *      DB_HOST=127.0.0.1
+ *      DB_PORT=5432
+ *      DB_NAME=app_db
+ *      DB_USER=app_user
+ *      DB_PASS=StrongPassword123
+ *      DB_CHARSET=utf8mb4
+ *
+ * 6) Ketika PHP berjalan di Windows, file configPostgreSQL.php akan membaca env dari:
+ *      getenv('DB_HOST')
+ *      $_ENV['DB_HOST']
+ *
+ * 7) Jika server Windows Anda memakai IIS atau XAMPP, pastikan:
+ *      - PDO PostgreSQL extension aktif
+ *      - pgsql extension sudah terinstall
+ *      - service PostgreSQL aktif
+ *      - port 5432 terbuka
+ *
+ * 8) Untuk programmer yang masih pemula, langkah paling aman adalah:
+ *      - gunakan folder secret di luar project
+ *      - jangan menaruh file key di folder public_html / wwwroot
+ *      - jangan commit ke Git
+ *
+ * ---------------------------------------------------------------------------
  */
 
 require_once __DIR__ . '/configPostgreSQL.php';
@@ -56,6 +121,14 @@ require_once __DIR__ . '/configPostgreSQL.php';
  *   sudo chmod 700 /etc/myapp/keys
  *   sudo chmod 600 /etc/myapp/keys/*.key
  *
+ * Contoh di Windows:
+ *   mkdir C:\myapp\keys
+ *   notepad C:\myapp\keys\login_secret.key
+ *   notepad C:\myapp\keys\operation_secret.key
+ *   notepad C:\myapp\keys\credential_write.key
+ *   notepad C:\myapp\keys\credential_read.key
+ *   notepad C:\myapp\keys\user_secret.key
+ *
  * Isi isi file-filenya dengan value random seperti:
  *   login_secret.key        => string acak panjang 32+ karakter
  *   operation_secret.key    => string acak panjang 32+ karakter
@@ -73,6 +146,15 @@ require_once __DIR__ . '/configPostgreSQL.php';
  *   DB_NAME=app_db
  *   DB_USER=app_user
  *   DB_PASS=veryStrongPassword123
+ *
+ * Contoh di Windows PowerShell:
+ *   $env:DB_DRIVER = "pgsql"
+ *   $env:DB_HOST = "127.0.0.1"
+ *   $env:DB_PORT = "5432"
+ *   $env:DB_NAME = "app_db"
+ *   $env:DB_USER = "app_user"
+ *   $env:DB_PASS = "StrongPassword123"
+ *   $env:DB_CHARSET = "utf8mb4"
  *
  * ---------------------------------------------------------------------------
  * STEP 3: Gunakan fungsi yang tersedia di AppConfigPostgreSQL.
@@ -231,5 +313,7 @@ try {
  * - Gunakan bulkInsert() untuk import data massal dengan chunking.
  * - Jangan pernah mengirim credential key dari browser langsung tanpa server-side validation.
  * - Jangan pernah hardcode password, secret, atau token di repository.
+ * - Di Windows, pastikan PostgreSQL extension dan PDO PostgreSQL aktif.
+ * - Di Windows, simpan secret di folder yang tidak dipubikasikan seperti C:\myapp\keys.
  * ---------------------------------------------------------------------------
  */
